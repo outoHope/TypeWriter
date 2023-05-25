@@ -1,0 +1,77 @@
+function typewriter_shortcode($atts, $content = null) {
+    extract(shortcode_atts(array(
+        'write_speed' => '5000',
+        'stay_speed' => '5000',
+        'delete_speed' => '3000',
+        'cursor' => '|',
+    ), $atts));
+
+    $output = '<span class="typewriter" data-write-speed="' . $write_speed . '" data-stay-speed="' . $stay_speed . '" data-delete-speed="' . $delete_speed . '" data-cursor="' . $cursor . '">' . $content . '</span>';
+
+    return $output;
+}
+add_shortcode('typewriter', 'typewriter_shortcode');
+
+function typewriter_script() {
+    ?>
+    <script>
+    jQuery(document).ready(function($) {
+        $('.typewriter').each(function() {
+            var $ele = $(this),
+                writeSpeed = $ele.data('write-speed'),
+                staySpeed = $ele.data('stay-speed'),
+                deleteSpeed = $ele.data('delete-speed'),
+                cursor = $ele.data('cursor'),
+                texts = $ele.text().split('|'),
+                index = 0,
+                isDeleting = false,
+                text = '';
+
+            function type() {
+                var currentText = texts[index];
+                if (isDeleting) {
+                    text = currentText.substring(0, text.length - 1);
+                } else {
+                    text = currentText.substring(0, text.length + 1);
+                }
+                $ele.html('<span class="wrap">' + text + cursor + '</span>');
+                var delta = writeSpeed;
+
+                if (isDeleting) {
+                    delta = deleteSpeed;
+                } else if (text === currentText) {
+                    delta = staySpeed;
+                    isDeleting = true;
+                    setTimeout(deleteText, delta);
+                    return;
+                }
+
+                setTimeout(type, delta);
+            }
+
+            function deleteText() {
+                var currentText = texts[index];
+                text = currentText.substring(0, text.length - 1);
+                $ele.html('<span class="wrap">' + text + cursor + '</span>');
+                var delta = deleteSpeed;
+
+                if (text === '') {
+                    isDeleting = false;
+                    index++;
+                    if (index === texts.length) {
+                        index = 0;
+                    }
+                    setTimeout(type, staySpeed);
+                    return;
+                }
+
+                setTimeout(deleteText, delta);
+            }
+
+            setTimeout(type, 0);
+        });
+    });
+    </script>
+    <?php
+}
+add_action('wp_footer', 'typewriter_script');
